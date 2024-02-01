@@ -1,6 +1,11 @@
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import React, { useState } from "react";
 import OptionCards from "./OptionCards";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 
 interface CreateGameProps {
   generateHash: (move: number, salt: number | null) => void;
@@ -29,61 +34,96 @@ const CreateGame = ({
   return (
     <Stack gap={4} my={4}>
       <Typography variant="h5">Create Game</Typography>
-      {!hash && (
-        <>
-          <Typography>Step - 1</Typography>
-          <OptionCards setMove={setPlayer1Move} />
-          <Stack width={"40%"} gap={4}>
+      <Accordion expanded={!hash}>
+        <AccordionSummary
+          expandIcon={
+            !hash ? (
+              <ExpandMoreIcon sx={{ cursor: "default" }} />
+            ) : (
+              <CheckCircleOutlineIcon sx={{ cursor: "default" }} />
+            )
+          }
+          aria-controls="step1-content"
+          id="step1-header"
+          sx={{ px: 3, py: 1 }}
+        >
+          <Typography sx={{ width: "40%", flexShrink: 0 }}>Step - 1</Typography>
+          <Typography sx={{ color: "text.secondary" }}>
+            Commit your move
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ px: 3, pb: 3 }}>
+          <>
+            <OptionCards setMove={setPlayer1Move} move={player1Move} />
+            <Stack width={"40%"} gap={4} mt={2}>
+              <TextField
+                value={salt}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setSalt(parseInt(event.target.value))
+                }
+                label={"Password (4 digits preferred)"}
+                variant="standard"
+              />
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  generateHash(player1Move, salt);
+                }}
+              >
+                Commit your move
+              </Button>
+            </Stack>
+          </>
+        </AccordionDetails>
+      </Accordion>
+      <Accordion expanded={!!hash && step !== 3}>
+        <AccordionSummary
+          expandIcon={
+            step !== 3 ? (
+              <ExpandMoreIcon sx={{ cursor: "default" }} />
+            ) : (
+              <CheckCircleOutlineIcon sx={{ cursor: "default" }} />
+            )
+          }
+          aria-controls="step1-content"
+          id="step1-header"
+          sx={{ px: 3, py: 1 }}
+        >
+          <Typography sx={{ width: "40%", flexShrink: 0 }}>Step - 2</Typography>
+          <Typography sx={{ color: "text.secondary" }}>
+            Invite player 2
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ px: 3, pb: 3 }}>
+          <Stack minWidth={"400px"} width={"30%"} gap={4}>
             <TextField
-              disabled
-              value={`Your move: ${player1Move}`}
+              value={player2}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setPlayer1Move(parseInt(event.target.value))
+                setPlayer2(event.target.value)
               }
+              label={"Enter player 2's address"}
+              variant="standard"
             />
             <TextField
-              value={salt}
+              value={stake}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setSalt(parseInt(event.target.value))
+                setStake(event.target.value)
               }
-              label={"Password / Salt"}
+              label={"How much you want to stake? (in Wei)"}
+              variant="standard"
             />
             <Button
               variant="outlined"
               onClick={() => {
-                generateHash(player1Move, salt);
+                deployRPSContract(hash, player2, stake);
+                setLoading(true);
               }}
             >
-              Commit your move
+              Proceed & Invite player 2
             </Button>
           </Stack>
-        </>
-      )}
-      {hash && (
-        <Stack width={"30%"} gap={4}>
-          <Typography>Step - 2</Typography>
-          <TextField
-            value={player2}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setPlayer2(event.target.value)
-            }
-            label={"Enter player 2's address"}
-          />
-          <TextField
-            value={stake}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setStake(event.target.value)
-            }
-            label={"How much you want to stake?"}
-          />
-          <Button
-            variant="outlined"
-            onClick={() => {
-              deployRPSContract(hash, player2, stake);
-            }}
-          >
-            Proceed
-          </Button>
+        </AccordionDetails>
+      </Accordion>
         </Stack>
       )}
       {contractAddress && (
