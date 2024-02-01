@@ -45,7 +45,9 @@ const CalculateResult = ({
   };
 
   useEffect(() => {
-    getGameInfo();
+    if (!result) {
+      getGameInfo();
+    }
   }, []);
 
   const handleSolve = async () => {
@@ -73,7 +75,7 @@ const CalculateResult = ({
       <Typography variant="h5">Calculate Result</Typography>
       <Stack gap={4}>
         <Stack width={"40%"} gap={4}>
-          <Typography mb={-3}>Timeleft: {timeLeftInGame}</Typography>
+          <Typography mb={-3}>Timeleft: {timeLeftInGame ?? "NA"}</Typography>
           {timeLeftInGame === "0 (Timed out)" && p2Move === 0 && (
             <Stack direction={"row"} alignItems={"center"} gap={2}>
               <Typography>{"Player 2 didn't submit his move"}</Typography>

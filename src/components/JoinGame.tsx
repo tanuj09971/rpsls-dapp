@@ -114,7 +114,7 @@ const JoinGame = ({
         {stake && timeLeftInGame && (
           <Stack gap={4}>
             <Typography>Staked funds in the game: {stake}</Typography>
-            <Typography>Timeleft: {timeLeftInGame}</Typography>
+            <Typography>Timeleft: {timeLeftInGame ?? "NA"}</Typography>
             {timeLeftInGame === "0 (Timed out)" && stake !== 0 && joined && (
               <Stack direction={"row"} alignItems={"center"} gap={2}>
                 <Typography>
