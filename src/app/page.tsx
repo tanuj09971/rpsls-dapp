@@ -18,7 +18,6 @@ export default function Home() {
 
   const joinValue = params.get("join");
   const resultValue = params.get("result");
-  console.log("resultValue ================:>> ", resultValue);
   const idValue = params.get("id");
 
   const handlePlayGame = () => {
@@ -51,8 +50,8 @@ export default function Home() {
         console.error("MetaMask not connected:", error);
       }
     } else {
+      console.warn("Please install Metamask, to play RPSLS! :>> ");
       window.alert("Please install Metamask, to play RPSLS!");
-      console.log("Please install Metamask, to play RPSLS! :>> ");
     }
   };
 

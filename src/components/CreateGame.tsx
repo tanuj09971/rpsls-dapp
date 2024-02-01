@@ -44,7 +44,6 @@ const CreateGame = ({
       setLoading(false);
       setStep(3);
     }
-    console.log("generatedLink0000000 :>> ", generatedLink);
   }, [contractAddress]);
 
   return (

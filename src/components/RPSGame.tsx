@@ -38,7 +38,6 @@ const RPSGame: React.FC<{
   const [web3, setWeb3] = useState<Web3 | null>(null);
   const [rpsContract, setRpsContract] = useState<any | null>(null);
   const [hasherContract, setHasherContract] = useState<any | null>(null);
-  console.log("resultValue, result :>> ", resultValue, result);
   const [currMode, setCurrMode] = useState<Modes>(
     joinValue ? Modes.JOIN : resultValue ? Modes.CALCULATE : Modes.NONE
   );
@@ -56,7 +55,6 @@ const RPSGame: React.FC<{
         hasherAddress
       );
       setHasherContract(newHasherContract);
-      console.log("newHasherContract :>> ", newHasherContract);
     }
   };
 
@@ -73,7 +71,6 @@ const RPSGame: React.FC<{
           .hash(move, salt)
           .call({ from: account, gas: 500000 });
         setHash(hashResult);
-        console.log("Hash Result:>>", hashResult);
       } catch (error) {
         console.error("Error generating the commitment hash:", error);
       }
@@ -95,7 +92,6 @@ const RPSGame: React.FC<{
 
         // const gas = await deployTransaction.estimateGas();
         // const gasPrice = await web3.eth.getGasPrice();
-        // console.log("gas, gasPrice :>> ", gas, gasPrice);
         deployTransaction
           .send({
             from: account ?? "",
@@ -112,10 +108,6 @@ const RPSGame: React.FC<{
             );
             setRpsContract(constract);
             setContractAddress(deployedContractAddress);
-            console.log(
-              "confirmationNumber, receipt :>> ",
-              confirmationNumber?.receipt
-            );
             return deployedContractAddress;
           });
       } catch (error) {
@@ -141,15 +133,13 @@ const RPSGame: React.FC<{
   };
 
   const play = async (move: number, stake: number) => {
-    console.log("rpsContract------------- :>> ", rpsContract);
     if (rpsContract) {
       try {
-        console.log("2ndaccount :>> ", account);
         const playRes = await rpsContract.methods
           .play(move)
           .send({ from: account, value: stake, gas: 500000 });
+        console.log("Play successful! :>>", playRes);
         if (playRes) setPlayed(true);
-        console.log("playRes :>> ", playRes);
       } catch (error) {
         console.error("Error joining game:", error);
       } finally {
@@ -159,10 +149,8 @@ const RPSGame: React.FC<{
   };
 
   const solve = async (usedSalt: number | null) => {
-    console.log("rpsContract:>>", rpsContract);
     if (rpsContract) {
       try {
-        console.log("1stAccount :>> ", account);
         const stake = await rpsContract.methods.stake().call({ from: account });
         const solveRes = await rpsContract.methods
           .solve(player1Move, usedSalt)
@@ -170,17 +158,14 @@ const RPSGame: React.FC<{
         const player2Move = await rpsContract.methods
           .c2()
           .call({ from: account });
-        console.log("player2Move :>> ", Number(player2Move));
         const winner = await rpsContract.methods
           .win(player1Move, Number(player2Move))
           .call({ from: account });
         const p2Address = await rpsContract.methods
           .j2()
           .call({ from: account });
-        console.log("Solve successful!");
-        console.log("solveRes :>> ", solveRes);
+        console.log("Solve successful! :>>", solveRes);
         if (winner) {
-          console.log(`You (player 1) won!`);
           return {
             winner: "Player-1",
             p1Move: moves[player1Move - 1],
@@ -190,7 +175,7 @@ const RPSGame: React.FC<{
             stake: Number(stake) * 2,
           };
         } else if (moves[player1Move - 1] === moves[Number(player2Move) - 1]) {
-          console.log("Player 2 won!");
+          console.log("Game Tied!");
           return {
             winner: "Tie",
             p1Move: moves[player1Move - 1],
@@ -217,7 +202,7 @@ const RPSGame: React.FC<{
   };
 
   return (
-    <Stack mx={2} sx={{ width: "90%" }}>
+    <Stack mx={2} sx={{ ...(currMode !== Modes.NONE && { width: "90%" }) }}>
       <Stack gap={1} direction={"row"}>
         <Button variant="contained" onClick={handleCreateGame}>
           Create Game
@@ -254,6 +239,7 @@ const RPSGame: React.FC<{
             play={play}
             idValue={resultValue ? "" : idValue}
             played={played}
+            rpsContract={rpsContract}
           />
         )}
         {currMode === Modes.CALCULATE && (
@@ -261,6 +247,8 @@ const RPSGame: React.FC<{
             solve={solve}
             idValue={idValue}
             result={result}
+            rpsContract={rpsContract}
+            account={account}
           />
         )}
       </Stack>

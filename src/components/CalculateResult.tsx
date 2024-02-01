@@ -2,33 +2,57 @@ import { Button, Stack, TextField, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import Loading from "./Loading";
 import CopyToClipboardButton from "./CopyToClipboardButton";
+import { timeLeft } from "@/utils/timeLeft";
 
 interface CalculateResultProps {
   solve: (salt: number | null) => any;
   idValue: string | null;
   result: any;
+  rpsContract: any;
+  account: string | null;
 }
 
 const CalculateResult = ({
   solve,
   idValue,
   result,
+  rpsContract,
+  account,
 }: CalculateResultProps) => {
   const [salt, setSalt] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [winner, setWinner] = useState<any>();
   const [resultLink, setResultLink] = useState("");
+  const [timeLeftInGame, setTimeLeftInGame] = useState<
+    number | string | undefined
+  >();
+  const [p2Move, setP2Move] = useState<number | undefined>();
+  const [refunded, setRefunded] = useState(false);
 
-  console.log("idValue :>> ", idValue);
+  const getGameInfo = async () => {
+    timeLeft(rpsContract, account, setTimeLeftInGame);
+    const c2 = await rpsContract.methods.c2().call({ from: account });
+    setP2Move(Number(c2));
+  };
+
+  const getP1Funds = async () => {
+    const j2Out = await rpsContract.methods
+      .j2Timeout()
+      .send({ from: account, gas: 500000 });
+    if (j2Out) {
+      setRefunded(true);
+    }
+  };
+
+  useEffect(() => {
+    getGameInfo();
+  }, []);
 
   const handleSolve = async () => {
     setLoading(true);
     const res = await solve(salt);
     setWinner(res);
-    if (res) {
-      setLoading(false);
-    }
-    console.log("res======================= :>> ", res);
+    setLoading(false);
   };
   useEffect(() => {
     if (result) {
@@ -44,11 +68,29 @@ const CalculateResult = ({
   }, [winner]);
 
   return (
-    <Stack gap={4} my={4} maxWidth={"60%"}>
+    <Stack gap={4} my={4}>
       {loading && <Loading />}
       <Typography variant="h5">Calculate Result</Typography>
       <Stack gap={4}>
         <Stack width={"40%"} gap={4}>
+          <Typography mb={-3}>Timeleft: {timeLeftInGame}</Typography>
+          {timeLeftInGame === "0 (Timed out)" && p2Move === 0 && (
+            <Stack direction={"row"} alignItems={"center"} gap={2}>
+              <Typography>{"Player 2 didn't submit his move"}</Typography>
+              <Button
+                variant="outlined"
+                onClick={getP1Funds}
+                disabled={refunded}
+              >
+                Get funds back
+              </Button>
+            </Stack>
+          )}
+          {refunded && (
+            <Typography color="green" mt={-2}>
+              Funds Refunded...
+            </Typography>
+          )}
           <TextField
             value={salt}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -91,10 +133,7 @@ const CalculateResult = ({
         </Stack>
       )}
       {resultLink && (
-        <Stack
-          py={1}
-          gap={1}
-        >
+        <Stack py={1} gap={1}>
           <Typography>
             <strong>Link:</strong> {resultLink}{" "}
             <CopyToClipboardButton text={resultLink} />
