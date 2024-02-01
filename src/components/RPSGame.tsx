@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Web3 from "web3";
 import Button from "@mui/material/Button";
 import { Stack } from "@mui/material";
@@ -7,6 +7,7 @@ import CreateGame from "./CreateGame";
 import { rpsBytecode } from "@/contracts/RPSBytecode";
 import JoinGame from "./JoinGame";
 import CalculateResult from "./CalculateResult";
+import { moves } from "@/utils/constants";
 
 enum Modes {
   NONE = "none",
@@ -20,14 +21,31 @@ const RPSGame: React.FC<{
   hasherAddress: string;
   hasherAbi: any;
   account: string | null;
-}> = ({ rpsAbi, hasherAddress, hasherAbi, account }) => {
+  joinValue: string | null;
+  idValue: string | null;
+  resultValue: string | null;
+  result: any;
+}> = ({
+  rpsAbi,
+  hasherAddress,
+  hasherAbi,
+  account,
+  joinValue,
+  idValue,
+  resultValue,
+  result,
+}) => {
   const [web3, setWeb3] = useState<Web3 | null>(null);
   const [rpsContract, setRpsContract] = useState<any | null>(null);
   const [hasherContract, setHasherContract] = useState<any | null>(null);
-  const [currMode, setCurrMode] = useState<Modes>(Modes.NONE);
+  console.log("resultValue, result :>> ", resultValue, result);
+  const [currMode, setCurrMode] = useState<Modes>(
+    joinValue ? Modes.JOIN : resultValue ? Modes.CALCULATE : Modes.NONE
+  );
   const [hash, setHash] = useState("");
   const [contractAddress, setContractAddress] = useState("");
   const [player1Move, setPlayer1Move] = useState<number>(0);
+  const [played, setPlayed] = useState<boolean>(false);
 
   const initializeWeb3 = async () => {
     if ((window as any).ethereum) {
@@ -41,6 +59,12 @@ const RPSGame: React.FC<{
       console.log("newHasherContract :>> ", newHasherContract);
     }
   };
+
+  useEffect(() => {
+    if (joinValue || resultValue) {
+      initializeWeb3();
+    }
+  }, [joinValue, idValue, resultValue]);
 
   const generateHash = async (move: number, salt: number | null) => {
     if (hasherContract) {
@@ -92,11 +116,13 @@ const RPSGame: React.FC<{
               "confirmationNumber, receipt :>> ",
               confirmationNumber?.receipt
             );
+            return deployedContractAddress;
           });
       } catch (error) {
         console.error("Error deploying contract:", error);
       }
     }
+    return "";
   };
 
   const handleCreateGame = async () => {
@@ -122,9 +148,12 @@ const RPSGame: React.FC<{
         const playRes = await rpsContract.methods
           .play(move)
           .send({ from: account, value: stake, gas: 500000 });
+        if (playRes) setPlayed(true);
         console.log("playRes :>> ", playRes);
       } catch (error) {
         console.error("Error joining game:", error);
+      } finally {
+        setPlayed(true);
       }
     }
   };
@@ -134,23 +163,53 @@ const RPSGame: React.FC<{
     if (rpsContract) {
       try {
         console.log("1stAccount :>> ", account);
+        const stake = await rpsContract.methods.stake().call({ from: account });
         const solveRes = await rpsContract.methods
           .solve(player1Move, usedSalt)
           .send({ from: account, gas: 500000 });
         const player2Move = await rpsContract.methods
           .c2()
           .call({ from: account });
-        console.log("player2Move :>> ", player2Move);
+        console.log("player2Move :>> ", Number(player2Move));
         const winner = await rpsContract.methods
-          .win(player1Move, player2Move)
+          .win(player1Move, Number(player2Move))
           .call({ from: account });
+        const p2Address = await rpsContract.methods
+          .j2()
+          .call({ from: account });
+        console.log("Solve successful!");
+        console.log("solveRes :>> ", solveRes);
         if (winner) {
           console.log(`You (player 1) won!`);
+          return {
+            winner: "Player-1",
+            p1Move: moves[player1Move - 1],
+            p2Move: moves[Number(player2Move) - 1],
+            p1Address: account,
+            p2Address: p2Address,
+            stake: Number(stake) * 2,
+          };
+        } else if (moves[player1Move - 1] === moves[Number(player2Move) - 1]) {
+          console.log("Player 2 won!");
+          return {
+            winner: "Tie",
+            p1Move: moves[player1Move - 1],
+            p2Move: moves[Number(player2Move) - 1],
+            p1Address: account,
+            p2Address: p2Address,
+            stake: 0,
+          };
         } else {
           console.log("Player 2 won!");
+          return {
+            winner: "Player-2",
+            p1Move: moves[player1Move - 1],
+            p2Move: moves[Number(player2Move) - 1],
+            p1Address: account,
+            p2Address: p2Address,
+            stake: Number(stake) * 2,
+          };
         }
-        console.log("Solve successful!");
-        console.log("playRes :>> ", solveRes);
       } catch (error) {
         console.error("Error solving:", error);
       }
@@ -158,7 +217,7 @@ const RPSGame: React.FC<{
   };
 
   return (
-    <Stack>
+    <Stack mx={2} sx={{ width: "90%" }}>
       <Stack gap={1} direction={"row"}>
         <Button variant="contained" onClick={handleCreateGame}>
           Create Game
@@ -170,25 +229,41 @@ const RPSGame: React.FC<{
           Calculate Result
         </Button>
       </Stack>
-      {currMode === Modes.CREATE && (
-        <CreateGame
-          generateHash={generateHash}
-          hash={hash}
-          deployRPSContract={deployRPSContract}
-          contractAddress={contractAddress}
-          player1Move={player1Move}
-          setPlayer1Move={setPlayer1Move}
-        />
-      )}
-      {currMode === Modes.JOIN && (
-        <JoinGame
-          web3={web3}
-          setRpsContract={setRpsContract}
-          account={account}
-          play={play}
-        />
-      )}
-      {currMode === Modes.CALCULATE && <CalculateResult solve={solve} />}
+      <Stack
+        sx={
+          currMode !== Modes.NONE
+            ? { minHeight: "650px", minWidth: "48vw" }
+            : {}
+        }
+      >
+        {currMode === Modes.CREATE && (
+          <CreateGame
+            generateHash={generateHash}
+            hash={hash}
+            deployRPSContract={deployRPSContract}
+            contractAddress={contractAddress}
+            player1Move={player1Move}
+            setPlayer1Move={setPlayer1Move}
+          />
+        )}
+        {currMode === Modes.JOIN && (
+          <JoinGame
+            web3={web3}
+            setRpsContract={setRpsContract}
+            account={account}
+            play={play}
+            idValue={resultValue ? "" : idValue}
+            played={played}
+          />
+        )}
+        {currMode === Modes.CALCULATE && (
+          <CalculateResult
+            solve={solve}
+            idValue={idValue}
+            result={result}
+          />
+        )}
+      </Stack>
     </Stack>
   );
 };

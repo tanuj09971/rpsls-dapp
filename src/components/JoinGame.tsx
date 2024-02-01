@@ -1,24 +1,36 @@
 import { Button, Stack, TextField, Typography } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import OptionCards from "./OptionCards";
 import RPS_ABI from "@/contracts/RPS.abi.json";
+import Loading from "./Loading";
 
 interface JoinGameProps {
   web3: any;
   setRpsContract: any;
   account: string | null;
   play: (move: number, stake: number) => void;
+  idValue: string | null;
+  played: boolean;
 }
 
-const JoinGame = ({ web3, setRpsContract, account, play }: JoinGameProps) => {
+const JoinGame = ({
+  web3,
+  setRpsContract,
+  account,
+  play,
+  idValue,
+  played,
+}: JoinGameProps) => {
   const [move, setMove] = useState<number>(0);
   const [enteredContractAddress, setEnteredContractAddress] = useState("");
   const [stake, setStake] = useState<number | undefined>();
   const [timeLeft, setTimeLeft] = useState<number | string | undefined>();
+  const [loading, setLoading] = useState(false);
+
   const findGame = async () => {
     const newRpsContract = new web3.eth.Contract(
       RPS_ABI,
-      enteredContractAddress
+      idValue || enteredContractAddress
     );
     setRpsContract(newRpsContract);
     console.log("newRpsContract :>> ", newRpsContract);
@@ -39,20 +51,28 @@ const JoinGame = ({ web3, setRpsContract, account, play }: JoinGameProps) => {
     });
     console.log("stake :>> ", Number(stake));
   };
+
+  useEffect(() => {
+    if (played) {
+      setLoading(false);
+    }
+  }, [played]);
+
   return (
     <Stack gap={4} my={4}>
+      {loading && <Loading />}
       <Typography variant="h5">Join Game</Typography>
       <>
-        <Stack width={"40%"} gap={4}>
+        <Stack width={"40%"} gap={4} minWidth={"400px"}>
           <TextField
-            value={enteredContractAddress}
+            value={idValue || enteredContractAddress}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
               setEnteredContractAddress(event.target.value)
             }
             label={"Enter contract address"}
           />
           <Button
-            variant="outlined"
+            variant="contained"
             onClick={() => {
               findGame();
             }}
@@ -64,22 +84,17 @@ const JoinGame = ({ web3, setRpsContract, account, play }: JoinGameProps) => {
           <Stack gap={4}>
             <Typography>Staked funds in the game: {stake}</Typography>
             <Typography>Timeleft: {timeLeft}</Typography>
-            <OptionCards setMove={setMove} />
+            <OptionCards move={move} setMove={setMove} />
             <Stack width={"40%"} gap={4}>
-              <TextField
-                disabled
-                value={`Your move: ${move}`}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  setMove(parseInt(event.target.value))
-                }
-              />
               <Button
+                disabled={played}
                 variant="outlined"
                 onClick={() => {
                   play(move, stake);
+                  setLoading(true);
                 }}
               >
-                Submit your move
+                {played ? "Move Submitted" : "Submit your move"}
               </Button>
             </Stack>
           </Stack>

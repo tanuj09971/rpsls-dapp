@@ -1,11 +1,13 @@
 import { Button, Stack, TextField, Typography } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import OptionCards from "./OptionCards";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CopyToClipboardButton from "./CopyToClipboardButton";
+import Loading from "./Loading";
 
 interface CreateGameProps {
   generateHash: (move: number, salt: number | null) => void;
@@ -14,7 +16,7 @@ interface CreateGameProps {
     c1HashValue: string,
     j2Address: string,
     stake: string | undefined
-  ) => void;
+  ) => Promise<string>;
   contractAddress: string;
   player1Move: number;
   setPlayer1Move: React.Dispatch<React.SetStateAction<number>>;
@@ -31,8 +33,23 @@ const CreateGame = ({
   const [salt, setSalt] = useState<number | null>(null);
   const [player2, setPlayer2] = useState("");
   const [stake, setStake] = useState<string | undefined>();
+  const [joinLink, setJoinLink] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(2);
+  useEffect(() => {
+    let generatedLink;
+    if (contractAddress) {
+      generatedLink = `${process.env.NEXT_PUBLIC_BASE_URL}?join=true&id=${contractAddress}`;
+      setJoinLink(generatedLink);
+      setLoading(false);
+      setStep(3);
+    }
+    console.log("generatedLink0000000 :>> ", generatedLink);
+  }, [contractAddress]);
+
   return (
     <Stack gap={4} my={4}>
+      {loading && <Loading />}
       <Typography variant="h5">Create Game</Typography>
       <Accordion expanded={!hash}>
         <AccordionSummary
@@ -124,12 +141,21 @@ const CreateGame = ({
           </Stack>
         </AccordionDetails>
       </Accordion>
+      {joinLink && (
+        <Stack
+          p={1}
+          gap={1}
+          sx={{
+            alignItems: "center",
+          }}
+        >
+          <Typography>
+            Link: {joinLink} <CopyToClipboardButton text={joinLink} />
+          </Typography>
+          <Typography color={"text.secondary"}>
+            (copy and share with player 2)
+          </Typography>
         </Stack>
-      )}
-      {contractAddress && (
-        <Typography>
-          Contract Address: {contractAddress} (copy and share with player 2)
-        </Typography>
       )}
     </Stack>
   );
