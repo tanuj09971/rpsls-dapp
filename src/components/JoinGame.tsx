@@ -34,6 +34,7 @@ const JoinGame = ({
   const [refunded, setRefunded] = useState(false);
   const [joined, setJoined] = useState(false);
   const [intervalId, setIntervalId] = useState<any>();
+  const [error, setError] = useState<string>("");
 
   const handlePlay = async () => {
     if (stake) {
@@ -68,11 +69,16 @@ const JoinGame = ({
   }, [timeLeftInGame]);
 
   const findGame = async () => {
+    if (!web3.utils.isAddress(idValue || enteredContractAddress)) {
+      console.error("Invalid Ethereum Address!");
+      setError("Invalid Ethereum Address!");
+      return;
+    }
     const newRpsContract = new web3.eth.Contract(
       RPS_ABI,
-      idValue || enteredContractAddress
+      enteredContractAddress ? enteredContractAddress : idValue
     );
-    setRpsContract(newRpsContract);
+    setRpsContract(newRpsContract);               
     const stake = await newRpsContract.methods.stake().call({ from: account });
     setStake(Number(stake));
     const intervalId = await timeLeft(
@@ -96,11 +102,13 @@ const JoinGame = ({
       <>
         <Stack width={"40%"} gap={4} minWidth={"400px"}>
           <TextField
-            value={idValue || enteredContractAddress}
+            value={enteredContractAddress ? enteredContractAddress : idValue}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
               setEnteredContractAddress(event.target.value)
             }
             label={"Enter contract address"}
+            helperText={error}
+            error={!!error}
           />
           <Button
             variant="contained"

@@ -88,7 +88,7 @@ const RPSGame: React.FC<{
         const deployTransaction = newRpsContract.deploy({
           data: `0x${rpsBytecode}`,
           arguments: [c1HashValue, j2Address],
-        });
+        } as any);
 
         // const gas = await deployTransaction.estimateGas();
         // const gasPrice = await web3.eth.getGasPrice();
@@ -128,6 +128,10 @@ const RPSGame: React.FC<{
   };
 
   const handleCalculateResult = async () => {
+    if (!rpsContract) {
+      window.alert("Create a game first!");
+      return;
+    }
     setCurrMode(Modes.CALCULATE);
     initializeWeb3();
   };
@@ -223,6 +227,7 @@ const RPSGame: React.FC<{
       >
         {currMode === Modes.CREATE && (
           <CreateGame
+            web3={web3}
             generateHash={generateHash}
             hash={hash}
             deployRPSContract={deployRPSContract}

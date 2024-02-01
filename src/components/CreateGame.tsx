@@ -10,6 +10,7 @@ import CopyToClipboardButton from "./CopyToClipboardButton";
 import Loading from "./Loading";
 
 interface CreateGameProps {
+  web3: any;
   generateHash: (move: number, salt: number | null) => void;
   hash: string;
   deployRPSContract: (
@@ -23,6 +24,7 @@ interface CreateGameProps {
 }
 
 const CreateGame = ({
+  web3,
   generateHash,
   hash,
   deployRPSContract,
@@ -36,6 +38,8 @@ const CreateGame = ({
   const [joinLink, setJoinLink] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(2);
+  const [error, setError] = useState<string>("");
+
   useEffect(() => {
     let generatedLink;
     if (contractAddress) {
@@ -74,6 +78,7 @@ const CreateGame = ({
             <Stack width={"40%"} gap={4} mt={2}>
               <TextField
                 value={salt}
+                type="number"
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   setSalt(parseInt(event.target.value))
                 }
@@ -119,9 +124,12 @@ const CreateGame = ({
               }
               label={"Enter player 2's address"}
               variant="standard"
+              helperText={error}
+              error={!!error}
             />
             <TextField
               value={stake}
+              type="number"
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                 setStake(event.target.value)
               }
@@ -131,6 +139,11 @@ const CreateGame = ({
             <Button
               variant="outlined"
               onClick={() => {
+                if (!web3.utils.isAddress(player2)) {
+                  console.error("Invalid Ethereum Address!");
+                  setError("Invalid Ethereum Address!");
+                  return;
+                }
                 deployRPSContract(hash, player2, stake);
                 setLoading(true);
               }}
