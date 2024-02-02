@@ -1,15 +1,15 @@
 import { Stack, Typography } from "@mui/material";
 import CopyToClipboardButton from "./CopyToClipboardButton";
 
-interface MetaMaskButtonProps {
+interface MetaMaskAccountProps {
   isWalletConnected: boolean;
-  account: string | null;
+  connectedAccount: string | undefined;
 }
 
-const MetaMaskButton = ({
+const MetaMaskAccount = ({
   isWalletConnected,
-  account,
-}: MetaMaskButtonProps) => {
+  connectedAccount,
+}: MetaMaskAccountProps) => {
   return (
     <Stack
       sx={{
@@ -25,12 +25,14 @@ const MetaMaskButton = ({
     >
       <Typography variant="body1">
         {isWalletConnected
-          ? `Connected Account: ${account}`
+          ? `Connected Account: ${connectedAccount}`
           : "Please connect your wallet"}
       </Typography>
-      <CopyToClipboardButton text={account || ""} />
+      {isWalletConnected && (
+        <CopyToClipboardButton text={connectedAccount ?? ""} />
+      )}
     </Stack>
   );
 };
 
-export default MetaMaskButton;
+export default MetaMaskAccount;

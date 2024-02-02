@@ -1,63 +1,117 @@
-import { Button, Stack, TextField, Typography } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import OptionCards from "./OptionCards";
-import Accordion from "@mui/material/Accordion";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import AccordionSummary from "@mui/material/AccordionSummary";
+import {
+  Button,
+  Stack,
+  TextField,
+  Typography,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+} from "@mui/material";
+import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { OptionCards, Loading, CopyToClipboardButton } from "@/components";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import CopyToClipboardButton from "./CopyToClipboardButton";
-import Loading from "./Loading";
+import { MatchPrimitiveType } from "web3";
+import isValidEthAddress from "@/utils/isValidEthAddress";
+import { GameState, QueryParams } from "@/libs/types";
+import { GameTexts } from "@/utils/constants";
+import { setLocalStorageData } from "@/utils/localStorage";
+import generateHash from "@/services/generateHash";
+import deployRpsContract from "@/services/deployRpsContract";
 
 interface CreateGameProps {
-  web3: any;
-  generateHash: (move: number, salt: number | null) => void;
-  hash: string;
-  deployRPSContract: (
-    c1HashValue: string,
-    j2Address: string,
-    stake: string | undefined
-  ) => Promise<string>;
+  connectedAccount: string | undefined;
+  gameState: GameState;
+  setGameState: Dispatch<SetStateAction<GameState>>;
   contractAddress: string;
+  setContractAddress: Dispatch<SetStateAction<string>>;
   player1Move: number;
   setPlayer1Move: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const CreateGame = ({
-  web3,
-  generateHash,
-  hash,
-  deployRPSContract,
+  connectedAccount,
+  gameState,
+  setGameState,
   contractAddress,
+  setContractAddress,
   player1Move,
   setPlayer1Move,
 }: CreateGameProps) => {
-  const [salt, setSalt] = useState<number | null>(null);
+  const [salt, setSalt] = useState<number | string>("");
   const [player2, setPlayer2] = useState("");
-  const [stake, setStake] = useState<string | undefined>();
+  const [stake, setStake] = useState<string>("");
   const [joinLink, setJoinLink] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(2);
   const [error, setError] = useState<string>("");
+  const [commitHash, setCommitHash] =
+    useState<MatchPrimitiveType<"bytes32", unknown>>("");
+
+  const handleCommitHash = async () => {
+    const hash = await generateHash(player1Move, salt, connectedAccount);
+    if (hash) {
+      setGameState(GameState.HASHED_COMMITTED);
+      setCommitHash(hash);
+    }
+  };
+
+  const handleDeployRpsContract = async () => {
+    try {
+      if (!isValidEthAddress(player2)) {
+        console.error("Invalid Ethereum Address!");
+        setError("Invalid Ethereum Address!");
+        return;
+      }
+      setLoading(true);
+      const deployedContractAddress = await deployRpsContract(
+        commitHash,
+        player2,
+        stake,
+        connectedAccount
+      );
+      if (deployedContractAddress) {
+        setContractAddress(deployedContractAddress);
+        setGameState(GameState.PLAYER_INVITED);
+        setLocalStorageData<string>(
+          GameTexts.LOCAL_STORAGE_KEY,
+          deployedContractAddress
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      setGameState(GameState.STUCKED);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let generatedLink;
-    if (contractAddress) {
-      generatedLink = `${process.env.NEXT_PUBLIC_BASE_URL}?join=true&id=${contractAddress}`;
+    if (contractAddress && gameState === GameState.PLAYER_INVITED) {
+      const generatedLink = `${window.location.origin.toString()}?${
+        QueryParams.JOIN
+      }=true&${QueryParams.GAME_ID}=${contractAddress}`;
       setJoinLink(generatedLink);
       setLoading(false);
       setStep(3);
     }
   }, [contractAddress]);
 
+  useEffect(() => {
+    if (gameState === GameState.STUCKED) {
+      setGameState(GameState.HASHED_COMMITTED);
+      setLoading(false);
+    }
+  }, [gameState]);
+
   return (
     <Stack gap={4} my={4}>
       {loading && <Loading />}
-      <Typography variant="h5">Create Game</Typography>
-      <Accordion expanded={!hash}>
+      <Typography variant="h5">{GameTexts.CREATE_GAME}</Typography>
+      <Accordion expanded={gameState === GameState.INITIAL}>
         <AccordionSummary
           expandIcon={
-            !hash ? (
+            gameState === GameState.INITIAL ? (
               <ExpandMoreIcon sx={{ cursor: "default" }} />
             ) : (
               <CheckCircleOutlineIcon sx={{ cursor: "default" }} />
@@ -69,7 +123,7 @@ const CreateGame = ({
         >
           <Typography sx={{ width: "40%", flexShrink: 0 }}>Step - 1</Typography>
           <Typography sx={{ color: "text.secondary" }}>
-            Commit your move
+            {GameTexts.COMMIT_MOVE}
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ px: 3, pb: 3 }}>
@@ -85,19 +139,16 @@ const CreateGame = ({
                 label={"Password (4 digits preferred)"}
                 variant="standard"
               />
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  generateHash(player1Move, salt);
-                }}
-              >
-                Commit your move
+              <Button variant="outlined" onClick={handleCommitHash}>
+                {GameTexts.COMMIT_MOVE}
               </Button>
             </Stack>
           </>
         </AccordionDetails>
       </Accordion>
-      <Accordion expanded={!!hash && step !== 3}>
+      <Accordion
+        expanded={gameState === GameState.HASHED_COMMITTED && step !== 3}
+      >
         <AccordionSummary
           expandIcon={
             step !== 3 ? (
@@ -112,7 +163,7 @@ const CreateGame = ({
         >
           <Typography sx={{ width: "40%", flexShrink: 0 }}>Step - 2</Typography>
           <Typography sx={{ color: "text.secondary" }}>
-            Invite player 2
+            {GameTexts.INVITE}
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ px: 3, pb: 3 }}>
@@ -136,19 +187,8 @@ const CreateGame = ({
               label={"How much you want to stake? (in Wei)"}
               variant="standard"
             />
-            <Button
-              variant="outlined"
-              onClick={() => {
-                if (!web3.utils.isAddress(player2)) {
-                  console.error("Invalid Ethereum Address!");
-                  setError("Invalid Ethereum Address!");
-                  return;
-                }
-                deployRPSContract(hash, player2, stake);
-                setLoading(true);
-              }}
-            >
-              Proceed & Invite player 2
+            <Button variant="outlined" onClick={handleDeployRpsContract}>
+              {GameTexts.PROCEED_AND_INVITE}
             </Button>
           </Stack>
         </AccordionDetails>

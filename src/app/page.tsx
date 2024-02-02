@@ -1,75 +1,75 @@
 "use client";
-import RPSGame from "@/components/RPSGame";
+import { RPSGame, MetaMaskAccount } from "@/components";
 import { Button, Container, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
-import RPS_ABI from "@/contracts/RPS.abi.json";
-import { HASHER_ADDRESS } from "@/contracts/ContractAddress";
-import HASHER_ABI from "@/contracts/Hasher.abi.json";
-import MetaMaskButton from "@/components/MetaMaskButton";
-import Web3 from "web3";
+import { useEffect, useMemo, useState } from "react";
+import web3Instance from "@/libs/web3Instance";
+import ethereumProvider from "@/libs/ethereumProvider";
 import { useSearchParams } from "next/navigation";
+import { QueryParams, GameResult } from "@/libs/types";
+import { GameTexts } from "@/utils/constants";
+import getResultFromUrl from "@/utils/getResultFromUrl";
 
 export default function Home() {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [account, setAccount] = useState<string | null>(null);
-  const [result, setResult] = useState<any>();
+  const [connectedAccount, setConnectedAccount] = useState<string>();
   const searchParams = useSearchParams();
-  const params = new URLSearchParams(searchParams.toString());
 
-  const joinValue = params.get("join");
-  const resultValue = params.get("result");
-  const idValue = params.get("id");
+  const { isJoiner, gameId, showResult, gameResult } = useMemo(() => {
+    const urlQueryParams = new URLSearchParams(searchParams.toString());
+    const result: GameResult | null = urlQueryParams.get(QueryParams.RESULT)
+      ? getResultFromUrl(urlQueryParams)
+      : null;
+    return {
+      isJoiner: urlQueryParams.get(QueryParams.JOIN),
+      gameId: urlQueryParams.get(QueryParams.GAME_ID),
+      showResult: urlQueryParams.get(QueryParams.RESULT),
+      gameResult: result,
+    };
+  }, [searchParams]);
 
-  const handlePlayGame = () => {
-    checkMetaMask();
-  };
-
-  useEffect(() => {
-    if (joinValue || resultValue) {
-      checkMetaMask();
-    }
-    if (resultValue) {
-      const result = {
-        winner: params.get("winner"),
-        p1Address: params.get("id"),
-        p2Address: params.get("p2address"),
-        p1Move: params.get("p1move"),
-        p2Move: params.get("p2move"),
-        stake: params.get("amount"),
-      };
-      setResult(result);
-    }
-  }, [joinValue, idValue, resultValue]);
-
-  const checkMetaMask = async () => {
-    if ((window as any).ethereum) {
+  const handleStartGame = async () => {
+    if (ethereumProvider) {
       try {
-        await (window as any).ethereum.request({ method: "eth_accounts" });
+        await ethereumProvider.request({ method: "eth_accounts" });
         connectWallet();
       } catch (error) {
         console.error("MetaMask not connected:", error);
       }
     } else {
-      console.warn("Please install Metamask, to play RPSLS! :>> ");
-      window.alert("Please install Metamask, to play RPSLS!");
+      console.warn(GameTexts.INSTALL_METAMASK);
+      if (window) window.alert(GameTexts.INSTALL_METAMASK);
     }
   };
 
   const connectWallet = async () => {
-    const web3 = new Web3((window as any).ethereum); // Create a Web3 instance using the injected provider
     try {
-      await (window as any).ethereum.request({ method: "eth_requestAccounts" });
-      const accounts = await web3.eth.getAccounts();
+      await ethereumProvider.request({ method: "eth_requestAccounts" });
+      const accounts = await web3Instance.eth.getAccounts();
       if (accounts.length) {
         setIsWalletConnected(true);
-        setAccount(accounts[0]);
+        setConnectedAccount(accounts[0]); // Select first account from Metamask wallet
       }
     } catch (error) {
       console.error("Error connecting MetaMask:", error);
     }
   };
+
+  // When player2 joins the game or sees the result
+  useEffect(() => {
+    if (isJoiner || showResult) {
+      handleStartGame();
+    }
+  }, [isJoiner, showResult]);
+
   return (
-    <Container maxWidth="lg" sx={{ minHeight: "100vh", p: 6 }}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        minHeight: "100vh",
+        px: 6,
+        py: 4,
+      }}
+    >
       <Stack
         gap={3}
         sx={{
@@ -81,37 +81,34 @@ export default function Home() {
           borderRadius: 8,
         }}
       >
-        <Typography variant="h4">Rock Paper Scissor Lizard Spock</Typography>
+        <Typography variant="h4">{GameTexts.TITLE}</Typography>
 
         {!isWalletConnected ? (
           <>
             <Button
               variant="contained"
-              onClick={handlePlayGame}
+              onClick={handleStartGame}
               sx={{ width: "200px" }}
             >
-              Play Game
+              {GameTexts.PLAY_GAME}
             </Button>
             <Typography variant="caption">
-              {"Please unlock Metamask, if it doesn't open automatically"}
+              {GameTexts.UNLOCK_METAMASK}
             </Typography>
           </>
         ) : (
           <>
-            <MetaMaskButton
+            <MetaMaskAccount
               isWalletConnected={isWalletConnected}
-              account={account}
+              connectedAccount={connectedAccount}
             />
 
             <RPSGame
-              rpsAbi={RPS_ABI}
-              hasherAddress={HASHER_ADDRESS}
-              hasherAbi={HASHER_ABI}
-              account={account}
-              joinValue={joinValue}
-              idValue={idValue}
-              resultValue={resultValue}
-              result={result}
+              connectedAccount={connectedAccount}
+              isJoiner={isJoiner}
+              gameId={gameId}
+              showResult={showResult}
+              gameResult={gameResult}
             />
           </>
         )}

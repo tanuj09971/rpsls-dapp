@@ -1,7 +1,7 @@
 import { Box, Stack, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
-import { moves } from "@/utils/constants";
+import { GameMoves } from "@/utils/constants";
 
 const OptionCards = ({
   setMove,
@@ -12,7 +12,7 @@ const OptionCards = ({
 }) => {
   return (
     <Stack direction={"row"} gap={2}>
-      {moves.map((item, idx) => (
+      {GameMoves.map((item, idx) => (
         <Box
           key={idx + 1}
           sx={{

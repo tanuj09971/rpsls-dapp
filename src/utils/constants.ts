@@ -1,1 +1,25 @@
-export const moves = ["rock", "paper", "scissor", "spock", "lizard"];
+export const GameMoves = ["rock", "paper", "scissor", "spock", "lizard"];
+
+export enum GameTexts {
+  TITLE = "Rock Paper Scissor Lizard Spock",
+  LOCAL_STORAGE_KEY = "game-id",
+  PLAYER1 = "Player-1",
+  PLAYER2 = "Player-2",
+  TIE = "Tie",
+  TIMED_OUT = "0 (Timed out)",
+  SECONDS = "seconds",
+  INSTALL_METAMASK = "Please install Metamask, to play RPSLS!",
+  UNLOCK_METAMASK = "Please unlock Metamask, if it doesn't open automatically",
+  PLAY_GAME = "Play Game",
+  CREATE_GAME = "Create Game",
+  JOIN_GAME = "Join Game",
+  CALCULATE_RESULT = "Calculate Result",
+  FIND_GAME = "Find Game",
+  REFRESH_GAME = "Refresh Game",
+  GET_FUNDS = "Get funds back",
+  FUNDS_REFUNDED = "Funds Refunded...",
+  GET_RESULT = "Get result",
+  PROCEED_AND_INVITE = "Proceed & Invite player 2",
+  INVITE = "Invite player 2",
+  COMMIT_MOVE = "Commit your move",
+}
