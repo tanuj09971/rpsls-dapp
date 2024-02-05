@@ -33,7 +33,7 @@ const JoinGame = ({
   gameState,
   setGameState,
 }: JoinGameProps) => {
-  const [move, setMove] = useState<number>(0);
+  const [move, setMove] = useState<number>(0); // 0 stands for null move
   const [fetchedMove, setFetchedMove] = useState<number>(0);
   const [enteredGameId, setEnteredGameId] = useState("");
   const [stake, setStake] = useState<number | undefined>();
@@ -140,7 +140,7 @@ const JoinGame = ({
   };
 
   useEffect(() => {
-    if (timeLeft === "0 (Timed out)") {
+    if (timeLeft === GameTexts.TIMED_OUT) {
       recallStakeAmount();
     }
   }, [timeLeft]);
@@ -193,7 +193,7 @@ const JoinGame = ({
             }}
           >
             {gameState === GameState.GAME_FOUND ||
-            gameState === GameState.JOINED
+              gameState === GameState.JOINED
               ? GameTexts.REFRESH_GAME
               : GameTexts.FIND_GAME}
           </Button>
@@ -202,7 +202,7 @@ const JoinGame = ({
           <Stack gap={4}>
             <Typography>Staked funds in the game: {stake}</Typography>
             <Typography>Timeleft: {timeLeft ?? "NA"}</Typography>
-            {timeLeft === "0 (Timed out)" &&
+            {timeLeft === GameTexts.TIMED_OUT &&
               stake !== 0 &&
               gameState === GameState.JOINED && (
                 <Stack direction={"row"} alignItems={"center"} gap={2}>

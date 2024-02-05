@@ -28,8 +28,8 @@ const deployRpsContract = async (
         .catch((err) => {
           console.error("Error deploying contract :>>", err);
         });
-      console.log("Contract deployed");
       const deployedContractAddress = deployedContract?.options?.address;
+      if (deployedContractAddress) console.log("Contract deployed");
       return deployedContractAddress;
     } catch (error) {
       console.error("Error deploying contract:", error);

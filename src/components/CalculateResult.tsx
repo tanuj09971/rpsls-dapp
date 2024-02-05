@@ -99,7 +99,7 @@ const CalculateResult = ({
   };
 
   useEffect(() => {
-    if (!gameResult || calculatedResult) {
+    if (!gameResult) {
       getP2Move();
     }
   }, [gameResult, calculatedResult]);
@@ -112,20 +112,16 @@ const CalculateResult = ({
 
   useEffect(() => {
     if (calculatedResult) {
-      const generatedLink = `${window.location.origin.toString()}?${
-        QueryParams.RESULT
-      }=true&${QueryParams.P1_ADDRESS}=${calculatedResult.p1Address}&${
-        QueryParams.WINNER
-      }=${calculatedResult.winner}&${QueryParams.P2_ADDRESS}=${
-        calculatedResult.p2Address
-      }&${QueryParams.P1_MOVE}=${calculatedResult.p1Move}&${
-        QueryParams.P2_MOVE
-      }=${calculatedResult.p2Move}&${QueryParams.STAKE}=${
-        calculatedResult.stake
-      }`;
+      const generatedLink = `${window.location.origin.toString()}?${QueryParams.RESULT
+        }=true&${QueryParams.P1_ADDRESS}=${calculatedResult.p1Address}&${QueryParams.WINNER
+        }=${calculatedResult.winner}&${QueryParams.P2_ADDRESS}=${calculatedResult.p2Address
+        }&${QueryParams.P1_MOVE}=${calculatedResult.p1Move}&${QueryParams.P2_MOVE
+        }=${calculatedResult.p2Move}&${QueryParams.STAKE}=${calculatedResult.stake
+        }`;
       setResultLink(generatedLink);
     }
   }, [calculatedResult]);
+
   return (
     <Stack gap={4} my={4}>
       {loading && <Loading />}
@@ -140,7 +136,12 @@ const CalculateResult = ({
           <Typography mb={-1}>Timeleft: {timeLeft ?? "NA"}</Typography>
           {timeLeft === GameTexts.TIMED_OUT && p2Move === 0 && (
             <Stack direction={"row"} alignItems={"center"} gap={2}>
-              <Typography>{"Player 2 didn't submit his move"}</Typography>
+              <Stack direction={"column"} gap={1}>
+                <Typography>{"Player 2 didn't submit his move"}</Typography>
+                <Typography variant="caption">
+                  {"(if it doesn't work, refresh the page and try again)"}
+                </Typography>
+              </Stack>
               <Button
                 variant="outlined"
                 onClick={getP1Funds}

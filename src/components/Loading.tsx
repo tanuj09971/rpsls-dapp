@@ -14,7 +14,7 @@ const Loading = () => {
       justifyContent={"center"}
       alignItems={"center"}
     >
-      <CircularProgress size={40}/>
+      <CircularProgress size={40} />
     </Stack>
   );
 };

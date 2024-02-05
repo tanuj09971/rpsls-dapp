@@ -39,12 +39,14 @@ Follow these steps to run the project locally:
 
 - **Next.js:** The project is built using Next.js for server-side rendering (not currently used in the dapp) and easy React development.
 - **TypeScript:** The codebase is written in TypeScript for enhanced type safety.
+- **Material-UI:** A popular React UI framework that provides pre-designed components and styles based on the Material Design principles, offering a consistent and visually appealing look and feel to the application.
 - **Web3.js:** Web3.js is used to interact with the Ethereum blockchain and smart contract.
 
 ## Notes
 
 - The application assumes only two parties playing the game.
 - The design is minimalistic for demonstration purposes.
+- I may have considered creating theme palettes for colors, but for such a limited color scheme, I decided not to.
 
 ## Mixed Strategy Nash Equilibria
 

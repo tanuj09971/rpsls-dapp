@@ -43,7 +43,6 @@ const CreateGame = ({
   const [stake, setStake] = useState<string>("");
   const [joinLink, setJoinLink] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(2);
   const [error, setError] = useState<string>("");
   const [commitHash, setCommitHash] =
     useState<MatchPrimitiveType<"bytes32", unknown>>("");
@@ -88,12 +87,11 @@ const CreateGame = ({
 
   useEffect(() => {
     if (contractAddress && gameState === GameState.PLAYER_INVITED) {
-      const generatedLink = `${window.location.origin.toString()}?${
-        QueryParams.JOIN
-      }=true&${QueryParams.GAME_ID}=${contractAddress}`;
+      const generatedLink = `${window.location.origin.toString()}?${QueryParams.JOIN
+        }=true&${QueryParams.GAME_ID}=${contractAddress}`;
       setJoinLink(generatedLink);
       setLoading(false);
-      setStep(3);
+      setGameState(GameState.PLAYER_INVITED)
     }
   }, [contractAddress]);
 
@@ -147,11 +145,11 @@ const CreateGame = ({
         </AccordionDetails>
       </Accordion>
       <Accordion
-        expanded={gameState === GameState.HASHED_COMMITTED && step !== 3}
+        expanded={gameState === GameState.HASHED_COMMITTED}
       >
         <AccordionSummary
           expandIcon={
-            step !== 3 ? (
+            gameState !== GameState.PLAYER_INVITED ? (
               <ExpandMoreIcon sx={{ cursor: "default" }} />
             ) : (
               <CheckCircleOutlineIcon sx={{ cursor: "default" }} />

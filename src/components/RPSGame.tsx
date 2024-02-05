@@ -5,6 +5,7 @@ import { CreateGame, JoinGame, CalculateResult } from "@/components";
 import { getLocalStorageData } from "@/utils/localStorage";
 import { GameState, GameModes, GameResult } from "@/libs/types";
 import { GameTexts } from "@/utils/constants";
+import { getCurrMode } from "@/utils/getCurrMode";
 
 interface RPSGameProps {
   connectedAccount: string | undefined;
@@ -22,14 +23,10 @@ const RPSGame = ({
   gameResult,
 }: RPSGameProps) => {
   const [currMode, setCurrMode] = useState<GameModes>(
-    isJoiner
-      ? GameModes.JOIN
-      : showResult
-      ? GameModes.CALCULATE
-      : GameModes.NONE
+    getCurrMode(isJoiner, showResult)
   );
   const [contractAddress, setContractAddress] = useState("");
-  const [player1Move, setPlayer1Move] = useState<number>(0);
+  const [player1Move, setPlayer1Move] = useState<number>(0); // 0 stands for null move
   const [gameState, setGameState] = useState<GameState>(GameState.INITIAL);
 
   const checkContractAddress = () => {
@@ -56,6 +53,8 @@ const RPSGame = ({
     setCurrMode(GameModes.CALCULATE);
   };
 
+  const handleStartNewGame = () => { if (typeof window !== "undefined") window?.location?.reload() }
+
   useEffect(() => {
     const sessionGameId = getLocalStorageData<string>(
       GameTexts.LOCAL_STORAGE_KEY
@@ -65,16 +64,22 @@ const RPSGame = ({
 
   return (
     <Stack mx={2} sx={{ ...(currMode !== GameModes.NONE && { width: "90%" }) }}>
-      <Stack gap={1} direction={"row"}>
-        <Button variant="contained" onClick={goToCreateGame}>
-          {GameTexts.CREATE_GAME}
-        </Button>
-        <Button variant="contained" onClick={goToJoinGame}>
-          {GameTexts.JOIN_GAME}
-        </Button>
-        <Button variant="contained" onClick={goToCalculateResult}>
-          {GameTexts.CALCULATE_RESULT}
-        </Button>
+      <Stack direction={"row"} alignItems={"center"} justifyContent={"space-between"}>
+        <Stack gap={1} direction={"row"}>
+          <Button variant="contained" onClick={goToCreateGame}>
+            {GameTexts.CREATE_GAME}
+          </Button>
+          <Button variant="contained" onClick={goToJoinGame}>
+            {GameTexts.JOIN_GAME}
+          </Button>
+          <Button variant="contained" onClick={goToCalculateResult}>
+            {GameTexts.CALCULATE_RESULT}
+          </Button>
+        </Stack>
+        {currMode === GameModes.CREATE && contractAddress && <>
+          {"OR"}
+          <Button variant="outlined" onClick={handleStartNewGame}>Start new game</Button>
+        </>}
       </Stack>
       <Stack
         sx={
@@ -115,7 +120,7 @@ const RPSGame = ({
           />
         )}
       </Stack>
-    </Stack>
+    </Stack >
   );
 };
 
